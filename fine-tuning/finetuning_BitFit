@@ -1,0 +1,110 @@
+!pip install -q transformers datasets peft accelerate trl
+
+# Imports
+import torch
+import wandb
+import huggingface_hub
+from datasets import load_dataset
+from trl import SFTTrainer
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    TrainingArguments
+)
+
+wandb.login(key="...")
+huggingface_hub.login(token="...")
+
+# Constants
+MODEL_NAME = "EleutherAI/pythia-160m"
+DATASET_NAME = "bigcode/starcoderdata"
+
+OUTPUT_DIR = "./outputs"
+OUTPUT_MODEL_DIR = "./bitfit_pythia_160m"
+
+SEED = 42
+
+# Dataset
+dataset = load_dataset(
+    DATASET_NAME,
+    data_dir="java",
+    split="train",
+    streaming=True
+)
+
+dataset = dataset.take(50000)
+dataset = dataset.map(lambda x: {"text": x["content"]})
+
+# Tokenizer
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+tokenizer.pad_token = tokenizer.eos_token
+
+# Model
+model = AutoModelForCausalLM.from_pretrained(
+    MODEL_NAME,
+    dtype=torch.float32,
+    device_map="auto"
+)
+
+model.config.use_cache = False
+
+# BitFit config
+
+# Freeze all parameters
+for param in model.parameters():
+    param.requires_grad = False
+
+# Unfreeze only bias terms
+for name, param in model.named_parameters():
+    if "bias" in name:
+        param.requires_grad = True
+
+# Verify number of trainable parameters
+trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+total_params = sum(p.numel() for p in model.parameters())
+print(f"Trainable: {trainable_params:,} ({trainable_params/total_params:.4%})")
+
+# Training arguments
+training_arguments = TrainingArguments(
+    report_to="wandb",
+    run_name="pythia-160m-bitfit",
+    output_dir=OUTPUT_DIR,
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=8,
+    learning_rate=2e-4,
+    max_steps=1000,
+    warmup_steps=50,
+    lr_scheduler_type="cosine",
+    weight_decay=0.01,
+    max_grad_norm=1.0,
+    adam_beta1=0.9,
+    adam_beta2=0.95,
+    adam_epsilon=1e-8,
+    fp16=False,
+    bf16=False,
+    logging_steps=50,
+    save_steps=500,
+    save_total_limit=3,
+    seed=SEED,
+    data_seed=SEED,
+    optim="adamw_torch",
+    gradient_checkpointing=False,
+    dataloader_num_workers=2,
+    dataloader_pin_memory=True,
+    remove_unused_columns=False,  
+)
+
+# Trainer
+trainer = SFTTrainer(
+    model=model,
+    train_dataset=dataset,
+    args=training_arguments,
+)
+
+# Training
+trainer.train()
+
+# Saving the model
+trainer.model.save_pretrained(OUTPUT_MODEL_DIR)
+tokenizer.save_pretrained(OUTPUT_MODEL_DIR)
+wandb.finish()
