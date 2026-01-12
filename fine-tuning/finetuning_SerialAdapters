@@ -1,0 +1,112 @@
+!pip install -q transformers datasets peft trl
+
+# Imports
+import torch
+import wandb
+import huggingface_hub
+from datasets import load_dataset
+from trl import SFTTrainer
+from peft import get_peft_model, LoraConfig, TaskType, PeftModel
+from transformers import (
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    TrainingArguments,
+    Trainer,
+    DataCollatorForLanguageModeling
+)
+
+wandb.login(key="...")
+huggingface_hub.login(token="...")
+
+# Constants
+MODEL_NAME = "EleutherAI/pythia-160m"
+DATASET_NAME = "bigcode/starcoderdata"
+
+OUTPUT_DIR = "./outputs"
+OUTPUT_MODEL_DIR = "./serial_adapter"
+
+SEED = 42
+
+ADAPTER_NAME = "serial_adapter"
+ADAPTER_R = 8  # Bottleneck dimension
+ADAPTER_ALPHA = 32  # Scaling factor
+ADAPTER_DROPOUT = 0.1
+USE_PARALLEL = False
+
+# Dataset
+dataset = load_dataset(
+    DATASET_NAME,
+    data_dir="java",
+    split="train",
+    streaming=True
+)
+
+dataset = dataset.take(50000)
+dataset = dataset.map(lambda x: {"text": x["content"]})
+
+# Tokenizer
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+tokenizer.pad_token = tokenizer.eos_token
+
+# Model
+model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
+
+# Serial Adapter config
+peft_config = LoraConfig(
+    task_type=TaskType.CAUSAL_LM,
+    r=16,
+    lora_alpha=32,
+    lora_dropout=0.1,
+    bias="none",
+    target_modules=["query_key_value", "dense", "dense_h_to_4h", "dense_4h_to_h"],
+    inference_mode=False,
+)
+
+model = get_peft_model(model, peft_config)
+model.print_trainable_parameters()
+
+# Training arguments
+training_args = TrainingArguments(
+    report_to="wandb",
+    run_name="pythia-160m-serial-adapters",
+    output_dir=OUTPUT_DIR,
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=8,
+    learning_rate=2e-4,
+    max_steps=1000,
+    warmup_steps=50,
+    lr_scheduler_type="cosine",
+    weight_decay=0.01,
+    max_grad_norm=1.0,
+    adam_beta1=0.9,
+    adam_beta2=0.95,
+    adam_epsilon=1e-8,
+    fp16=torch.cuda.is_available(),
+    bf16=False,
+    logging_steps=50,
+    save_steps=500,
+    save_total_limit=3,
+    seed=SEED,
+    data_seed=SEED,
+    optim="adamw_torch",
+    gradient_checkpointing=False,
+    dataloader_num_workers=2,
+    dataloader_pin_memory=True,
+    remove_unused_columns=False,
+)
+
+# Trainer
+trainer = SFTTrainer(
+    model=model,
+    args=training_args,
+    train_dataset=dataset,
+    peft_config=peft_config,
+)
+
+# Training
+trainer.train()
+
+# Save adapter
+model.save_pretrained(OUTPUT_MODEL_DIR)
+tokenizer.save_pretrained(OUTPUT_MODEL_DIR)
+wandb.finish()
