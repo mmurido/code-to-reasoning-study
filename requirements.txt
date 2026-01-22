@@ -1,0 +1,12 @@
+transformers
+datasets
+peft
+trl
+accelerate
+torch
+torchvision
+torchaudio
+wandb
+huggingface_hub
+pyyaml
+python-dotenv
