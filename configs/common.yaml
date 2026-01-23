@@ -1,7 +1,10 @@
-model_name: EleutherAI/pythia-160m
-dataset_name: bigcode/starcoderdata
-language: java
-dataset_size: 50000
+model:
+  name: EleutherAI/pythia-160m
+
+dataset:
+  name: bigcode/starcoderdata
+  language: java
+  size: 50000
 
 # Reproducibility
 seed: 42

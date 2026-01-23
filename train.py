@@ -45,7 +45,7 @@ def main():
 
     cfg = merge_configs(common_cfg, method_cfg)
 
-    run_name = f"{cfg['model']['name']}-{args.method}"
+    run_name = f"{cfg['model_name'].split('/')[-1]}-{cfg['language']}-{args.method}"
     logger = init_app_logger("train")
 
     logger.info("Selected PEFT method: %s", args.method)
