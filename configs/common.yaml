@@ -12,7 +12,7 @@ seed: 42
 training:
   batch_size: 8
   grad_accum: 4
-  lr: 2e-4
+  lr: 2.0e-4
   max_steps: 2000
   warmup: 100
   scheduler: cosine

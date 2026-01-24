@@ -44,8 +44,9 @@ def main():
     method_cfg = load_yaml(f"configs/{args.method}.yaml")
 
     cfg = merge_configs(common_cfg, method_cfg)
+    cfg["output_dir"] = args.output_dir
 
-    run_name = f"{cfg['model_name'].split('/')[-1]}-{cfg['language']}-{args.method}"
+    run_name = f"{cfg['model']['name'].split('/')[-1]}-{cfg['dataset']['language']}-{args.method}"
     logger = init_app_logger("train")
 
     logger.info("Selected PEFT method: %s", args.method)

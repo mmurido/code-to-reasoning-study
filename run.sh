@@ -23,7 +23,7 @@ python3 -m pip install --user -r requirements.txt
 
 echo "Starting training... Logs will be saved to $LOG_FILE"
 
-nohup python train.py --method "$METHOD" --adapter_dir "$OUTPUT_DIR" > "$LOG_FILE" 2>&1 &
+nohup python3 train.py --method "$METHOD" --output_dir "$OUTPUT_DIR" > "$LOG_FILE" 2>&1 &
 
 echo "Training started in background."
 echo "Use 'tail -f $LOG_FILE' to monitor progress."
