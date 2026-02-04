@@ -1,6 +1,0 @@
-method: prefix
-adapter_dir: models/prefix_pythia_160m
-
-prefix:
-  num_virtual_tokens: 20
-  prefix_projection: true

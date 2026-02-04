@@ -1,0 +1,29 @@
+# @package _global_
+
+defaults:
+  - /model: pythia-1b
+  - /peft: lora-pythia
+  - /dataset: starcoderdata-cpp
+  - /training: base
+  - /eval: base
+  - _self_
+
+run:
+  id: pythia-1b__lora__starcoderdata-cpp
+  timestamp: null
+
+training:
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 16
+  max_steps: 2000
+
+eval:
+  tasks:
+    - gsm8k_cot
+    - anli
+    - bbh_cot_fewshot_logical_deduction_three_objects
+    - bbh_cot_fewshot_boolean_expressions
+    - boolq
+    - piqa
+    - arc_easy
+    - hellaswag

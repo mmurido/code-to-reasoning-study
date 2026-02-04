@@ -1,5 +1,7 @@
 .env
 training_*.log
-outputs/
+experiments/
+baselines/
 wandb/
 __pycache__/
+nohup.log

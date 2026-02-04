@@ -1,0 +1,5 @@
+hf_id: bigcode/starcoderdata
+name: starcoderdata
+languages: cpp
+split: train
+text_field: content
