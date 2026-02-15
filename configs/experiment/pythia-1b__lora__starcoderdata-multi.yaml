@@ -9,7 +9,7 @@ defaults:
   - _self_
 
 run:
-  id: pythia-1b_lora__starcoderdata-multi
+  id: pythia-1b__lora__starcoderdata-multi
   timestamp: null
 
 training:
@@ -21,9 +21,9 @@ eval:
   tasks:
     - gsm8k_cot
     - anli
-    - hellaswag
     - bbh_cot_fewshot_logical_deduction_three_objects
     - bbh_cot_fewshot_boolean_expressions
     - boolq
-    - arc_easy
     - piqa
+    - arc_easy
+    # - hellaswag

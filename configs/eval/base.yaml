@@ -1,2 +1,9 @@
-batch_size: 4
+batch_size: 16
 num_fewshot: 3
+max_new_tokens: 256
+temperature: 0.0
+top_p: 1.0
+do_sample: false
+generation_kwargs:
+  num_beams: 1
+  early_stopping: true

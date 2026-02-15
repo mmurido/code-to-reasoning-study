@@ -1,0 +1,4 @@
+method: prefix_tuning
+num_virtual_tokens: 48
+prefix_projection: false
+encoder_hidden_size: null
