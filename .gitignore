@@ -5,3 +5,5 @@ baselines/
 wandb/
 __pycache__/
 nohup.log
+count_params.py
+count_tokens.py

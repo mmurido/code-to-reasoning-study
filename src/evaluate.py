@@ -1,25 +1,34 @@
 import json
+import time
+import torch
+import traceback
 import contextlib
-from lm_eval import evaluator
+from utils.baseline import baseline_dir
+from utils.logging import log_eval_config
+from utils.json import json_safe
 from lm_eval.models.huggingface import HFLM
+from lm_eval import evaluator
 from pathlib import Path
 from omegaconf import DictConfig
-from utils.baseline import baseline_dir
-from utils.scheduler import schedule_lm_eval
 
 
 def run_lm_eval(
     model_name: str,
-    task: str,
+    tasks: list[str],
     output_dir: Path,
     peft_path: Path | None = None,
     batch_size: int = 1,
     num_fewshot: int = 3,
+    max_new_tokens: int = 512,
+    temperature: float = 0.0,
+    top_p: float = 1.0,
+    do_sample: bool = False,
+    generation_kwargs: dict | None = None,
 ):
     model_args = {
         "pretrained": model_name,
         "batch_size": batch_size,
-        "device": "cuda",
+        "parallelize": True,
     }
 
     if peft_path is not None:
@@ -27,47 +36,96 @@ def run_lm_eval(
 
     lm = HFLM(**model_args)
 
-    task_dir = output_dir / task
-    results_file = task_dir / "results.json"
+    gen_kwargs = generation_kwargs or {
+        "num_beams": 1,
+        "early_stopping": True,
+        "max_new_tokens": max_new_tokens,
+        "temperature": temperature,
+        "top_p": top_p,
+        "do_sample": do_sample,
+    }
 
-    if results_file.exists():
-        print(f"Skipping existing eval for {task}")
-        return
+    for task in tasks:
+        task_dir = output_dir / task
+        results_file = task_dir / "results.json"
+        config_file = task_dir / "config.json"
 
-    task_dir.mkdir(parents=True, exist_ok=True)
-    log_file = task_dir / "eval.log"
+        if results_file.exists():
+            print(f"Skipping existing eval for {task}")
+            continue
 
-    with (
-        open(log_file, "w") as f,
-        contextlib.redirect_stdout(f),
-        contextlib.redirect_stderr(f),
-    ):
-        print(f"Starting task {task}")
+        task_dir.mkdir(parents=True, exist_ok=True)
+        log_file = task_dir / "eval.log"
 
-        results = evaluator.simple_evaluate(
-            model=lm,
-            tasks=[task],
-            num_fewshot=num_fewshot,
-            batch_size=batch_size,
-            log_samples=True,
-        )
+        task_start = time.time()
 
-    with open(task_dir / f"{task}.json", "w") as f:
-        json.dump(results, f, indent=2)
+        with (
+            open(log_file, "w") as f,
+            contextlib.redirect_stdout(f),
+            contextlib.redirect_stderr(f),
+        ):
+            config_summary = log_eval_config(
+                log_f=f,
+                task=task,
+                lm=lm,
+                num_fewshot=num_fewshot,
+                batch_size=batch_size,
+                start_time=task_start,
+            )
+
+            try:
+                print(f"Running evaluation for {task}...", flush=True)
+                results = evaluator.simple_evaluate(
+                    model=lm,
+                    tasks=[task],
+                    num_fewshot=num_fewshot,
+                    batch_size=batch_size,
+                    log_samples=True,
+                    gen_kwargs=gen_kwargs,
+                )
+
+                tmp_file = results_file.with_suffix(".json.tmp")
+                with open(tmp_file, "w", encoding="utf-8") as rf:
+                    json.dump(json_safe(results), rf, indent=2)
+
+                tmp_file.replace(results_file)
+                print(f"Results saved to: {results_file}", flush=True)
+
+                runtime = time.time() - task_start
+                print(
+                    f"Task {task} completed in {runtime / 60:.1f} minutes.", flush=True
+                )
+
+                with open(config_file, "w", encoding="utf-8") as cf:
+                    json.dump(config_summary, cf, indent=2)
+
+                print(f"Effective eval config saved: {config_file}", flush=True)
+
+            except Exception:
+                print(f"Task {task} failed:", flush=True)
+                traceback.print_exc()
+                continue
+
+    torch.cuda.empty_cache()
+    del lm
 
 
 def run_post_finetune_eval(cfg: DictConfig, exp_dir: Path) -> None:
     adapter_dir = exp_dir / "train" / "checkpoints" / "final"
     out_dir = exp_dir / "eval" / "finetuned"
 
-    schedule_lm_eval(
+    run_lm_eval(
         model_name=cfg.model.hf_id,
         tasks=cfg.eval.tasks,
         output_dir=out_dir,
         peft_path=adapter_dir,
-        gpus=[0, 1],
         batch_size=cfg.eval.batch_size,
         num_fewshot=cfg.eval.num_fewshot,
+        max_new_tokens=cfg.eval.max_new_tokens,
+        temperature=cfg.eval.temperature,
+        top_p=cfg.eval.top_p,
+        do_sample=cfg.eval.do_sample,
+        generation_kwargs=cfg.eval.generation_kwargs,
     )
 
 
@@ -75,12 +133,16 @@ def run_baseline_eval(cfg: DictConfig, exp_dir: Path) -> None:
     out_dir = baseline_dir(cfg)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    schedule_lm_eval(
+    run_lm_eval(
         model_name=cfg.model.hf_id,
         tasks=cfg.eval.tasks,
         output_dir=out_dir,
         peft_path=None,
-        gpus=[0, 1],
         batch_size=cfg.eval.batch_size,
         num_fewshot=cfg.eval.num_fewshot,
+        max_new_tokens=cfg.eval.max_new_tokens,
+        temperature=cfg.eval.temperature,
+        top_p=cfg.eval.top_p,
+        do_sample=cfg.eval.do_sample,
+        generation_kwargs=cfg.eval.generation_kwargs,
     )

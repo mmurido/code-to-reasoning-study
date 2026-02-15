@@ -1,6 +1,6 @@
 from typing import Any
 from omegaconf import DictConfig, OmegaConf
-from peft import LoraConfig
+from peft import LoraConfig, PrefixTuningConfig
 
 
 def build_lora(cfg: DictConfig) -> LoraConfig:
@@ -20,8 +20,28 @@ def build_lora(cfg: DictConfig) -> LoraConfig:
     )
 
 
+def build_prefix_tuning(cfg: DictConfig) -> PrefixTuningConfig:
+    peft_cfg = cfg.peft
+
+    num_virtual_tokens = peft_cfg.get("num_virtual_tokens", 20)
+    token_dim = peft_cfg.get("token_dim", None)
+    encoder_hidden_size = peft_cfg.get("encoder_hidden_size", None)
+    prefix_projection = peft_cfg.get("prefix_projection", True)
+    inference_mode = peft_cfg.get("inference_mode", False)
+
+    return PrefixTuningConfig(
+        task_type="CAUSAL_LM",
+        inference_mode=inference_mode,
+        num_virtual_tokens=num_virtual_tokens,
+        token_dim=token_dim,
+        encoder_hidden_size=encoder_hidden_size,
+        prefix_projection=prefix_projection,
+    )
+
+
 PEFT_BUILDERS = {
     "lora": build_lora,
+    "prefix_tuning": build_prefix_tuning,
 }
 
 

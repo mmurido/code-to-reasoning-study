@@ -1,5 +1,4 @@
-from transformers import TrainingArguments
-from trl import SFTTrainer
+from trl import SFTTrainer, SFTConfig
 
 
 def build_trainer(
@@ -10,7 +9,8 @@ def build_trainer(
     exp_dir,
 ):
     t = cfg.training
-    args = TrainingArguments(
+
+    sft_config = SFTConfig(
         output_dir=str(exp_dir / "train/checkpoints"),
         seed=t.seed,
         report_to="wandb",
@@ -32,12 +32,17 @@ def build_trainer(
         disable_tqdm=t.disable_tqdm,
         save_steps=t.save_steps,
         save_total_limit=t.save_total_limit,
+        max_seq_length=t.max_seq_length,
+        packing=True,
     )
 
-    return SFTTrainer(
+    trainer = SFTTrainer(
         model=model,
         train_dataset=dataset,
         peft_config=peft_cfg,
-        args=args,
-        max_seq_length=t.max_seq_length,
+        args=sft_config,
     )
+
+    trainer.can_return_loss = True
+
+    return trainer
