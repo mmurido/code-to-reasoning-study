@@ -39,9 +39,19 @@ def build_prefix_tuning(cfg: DictConfig) -> PrefixTuningConfig:
     )
 
 
+def build_bitfit(cfg: DictConfig) -> dict:
+    peft_cfg = cfg.peft
+    return {
+        "method": "bitfit",
+        "bias": peft_cfg.get("bias", "all"),
+        "task_type": "CAUSAL_LM",
+    }
+
+
 PEFT_BUILDERS = {
     "lora": build_lora,
     "prefix_tuning": build_prefix_tuning,
+    "bitfit": build_bitfit,
 }
 
 

@@ -1,3 +1,4 @@
+import os
 import json
 import time
 import torch
@@ -6,6 +7,7 @@ import contextlib
 from utils.baseline import baseline_dir
 from utils.logging import log_eval_config
 from utils.json import json_safe
+from utils.peft import load_bitfit_only
 from lm_eval.models.huggingface import HFLM
 from lm_eval import evaluator
 from pathlib import Path
@@ -24,17 +26,39 @@ def run_lm_eval(
     top_p: float = 1.0,
     do_sample: bool = False,
     generation_kwargs: dict | None = None,
+    peft_method: str | None = None,
 ):
+
+    torch.cuda.empty_cache()
+    os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:128"
+
     model_args = {
         "pretrained": model_name,
         "batch_size": batch_size,
         "parallelize": True,
     }
 
-    if peft_path is not None:
-        model_args["peft"] = str(peft_path)
+    from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    lm = HFLM(**model_args)
+    base_model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        device_map="auto",
+        torch_dtype=torch.float16,
+        trust_remote_code=True,
+    )
+
+    if peft_path is not None:
+        if peft_method == "bitfit":
+            base_model = load_bitfit_only(base_model, peft_path)
+            lm = HFLM(
+                pretrained=base_model,
+                tokenizer=AutoTokenizer.from_pretrained(model_name),
+            )
+        else:
+            model_args["peft"] = str(peft_path)
+            lm = HFLM(**model_args)
+    else:
+        lm = HFLM(**model_args)
 
     gen_kwargs = generation_kwargs or {
         "num_beams": 1,
@@ -126,6 +150,7 @@ def run_post_finetune_eval(cfg: DictConfig, exp_dir: Path) -> None:
         top_p=cfg.eval.top_p,
         do_sample=cfg.eval.do_sample,
         generation_kwargs=cfg.eval.generation_kwargs,
+        peft_method=cfg.peft.method,
     )
 
 
@@ -145,4 +170,5 @@ def run_baseline_eval(cfg: DictConfig, exp_dir: Path) -> None:
         top_p=cfg.eval.top_p,
         do_sample=cfg.eval.do_sample,
         generation_kwargs=cfg.eval.generation_kwargs,
+        peft_method=None,
     )
