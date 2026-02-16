@@ -1,6 +1,6 @@
 from typing import Any
 from omegaconf import DictConfig, OmegaConf
-from peft import LoraConfig, PrefixTuningConfig
+from peft import LoraConfig, PrefixTuningConfig, IA3Config
 
 
 def build_lora(cfg: DictConfig) -> LoraConfig:
@@ -48,10 +48,30 @@ def build_bitfit(cfg: DictConfig) -> dict:
     }
 
 
+def build_ia3(cfg: DictConfig) -> IA3Config:
+    peft_cfg = cfg.peft
+
+    target_modules = peft_cfg.get("target_modules", None)
+    if isinstance(target_modules, (list, DictConfig)):
+        target_modules = OmegaConf.to_container(target_modules, resolve=True)
+
+    ff_modules = peft_cfg.get("feedforward_modules", None)
+    if isinstance(ff_modules, (list, DictConfig)):
+        ff_modules = OmegaConf.to_container(ff_modules, resolve=True)
+
+    return IA3Config(
+        task_type="CAUSAL_LM",
+        target_modules=target_modules,
+        feedforward_modules=ff_modules,
+        fan_in_fan_out=peft_cfg.get("fan_in_fan_out", False),
+    )
+
+
 PEFT_BUILDERS = {
     "lora": build_lora,
     "prefix_tuning": build_prefix_tuning,
     "bitfit": build_bitfit,
+    "ia3": build_ia3,
 }
 
 

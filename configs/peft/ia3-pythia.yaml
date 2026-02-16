@@ -1,0 +1,7 @@
+method: ia3
+target_modules:
+  - query_key_value
+  - dense
+feedforward_modules:
+  - dense
+fan_in_fan_out: false

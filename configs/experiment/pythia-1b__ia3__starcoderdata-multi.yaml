@@ -2,12 +2,12 @@
 
 defaults:
   - /model: pythia-1b
-  - /peft: lora-pythia
-  - /dataset: starcoderdata-cpp
+  - /peft: ia3-pythia
+  - /dataset: starcoderdata-multi
   - /training: base
   - /eval: base
   - _self_
 
 run:
-  id: pythia-1b__lora__starcoderdata-cpp
+  id: pythia-1b__ia3__starcoderdata-multi
   timestamp: null
