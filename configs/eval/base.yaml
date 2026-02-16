@@ -7,3 +7,12 @@ do_sample: false
 generation_kwargs:
   num_beams: 1
   early_stopping: true
+tasks:
+  - gsm8k_cot
+  - anli
+  - bbh_cot_fewshot_logical_deduction_three_objects
+  - bbh_cot_fewshot_boolean_expressions
+  - boolq
+  - piqa
+  - arc_easy
+  - hellaswag

@@ -48,4 +48,5 @@ def load_bitfit_only(
         print(f"Warning: {len(unexpected)} unexpected keys when loading BitFit biases")
 
     print(f"Successfully loaded {len(state_dict)} BitFit bias parameters")
+    print("Sample bias loaded:", list(state_dict.keys())[:3])
     return model
