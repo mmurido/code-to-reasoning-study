@@ -39,15 +39,17 @@ def log_trainer_info(log_f, trainer):
 def log_peft_info(log_f, peft_cfg):
     print("\nPEFT config:", file=log_f, flush=True)
     if peft_cfg is not None:
-        peft_dict = (
-            OmegaConf.to_container(peft_cfg, resolve=True)
-            if OmegaConf.is_config(peft_cfg)
-            else dict(peft_cfg)
-        )
+        if hasattr(peft_cfg, "to_dict"):
+            peft_dict = peft_cfg.to_dict()
+        elif OmegaConf.is_config(peft_cfg):
+            peft_dict = OmegaConf.to_container(peft_cfg, resolve=True)
+        else:
+            peft_dict = dict(peft_cfg)
+
         print(json.dumps(peft_dict, indent=2, default=str), file=log_f, flush=True)
 
-    if wandb.run is not None:
-        wandb.config.update({"peft_config": peft_dict})
+        if wandb.run is not None:
+            wandb.config.update({"peft_config": peft_dict})
 
 
 def log_model_info(log_f, model):
@@ -74,11 +76,13 @@ def log_model_info(log_f, model):
 def save_metadata(log_dir, cfg, trainer, model, peft_cfg):
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     all_params = sum(p.numel() for p in model.parameters())
-    peft_dict = (
-        OmegaConf.to_container(peft_cfg, resolve=True)
-        if OmegaConf.is_config(peft_cfg)
-        else dict(peft_cfg)
-    )
+
+    if hasattr(peft_cfg, "to_dict"):
+        peft_dict = peft_cfg.to_dict()
+    elif OmegaConf.is_config(peft_cfg):
+        peft_dict = OmegaConf.to_container(peft_cfg, resolve=True)
+    else:
+        peft_dict = dict(peft_cfg)
 
     full_info = {
         "timestamp_start": datetime.now().isoformat(),

@@ -45,7 +45,7 @@ def run_training(cfg, exp_dir: Path):
             dataset = load_data(cfg)
             peft_cfg = build_peft(cfg)
 
-            if peft_cfg["method"] == "bitfit":
+            if cfg.peft.method == "bitfit":
                 model = prepare_model_for_bitfit(
                     model, bias=peft_cfg.get("bias", "all")
                 )
