@@ -6,8 +6,8 @@ from peft import LoraConfig, PrefixTuningConfig, IA3Config
 def build_lora(cfg: DictConfig) -> LoraConfig:
     peft_cfg = cfg.peft
 
-    target_modules = peft_cfg.target_modules
-    if hasattr(target_modules, "__dict__"):
+    target_modules = peft_cfg.get("target_modules", None)
+    if target_modules is not None:
         target_modules = OmegaConf.to_container(target_modules, resolve=True)
 
     return LoraConfig(
@@ -52,11 +52,11 @@ def build_ia3(cfg: DictConfig) -> IA3Config:
     peft_cfg = cfg.peft
 
     target_modules = peft_cfg.get("target_modules", None)
-    if isinstance(target_modules, (list, DictConfig)):
+    if target_modules is not None:
         target_modules = OmegaConf.to_container(target_modules, resolve=True)
 
     ff_modules = peft_cfg.get("feedforward_modules", None)
-    if isinstance(ff_modules, (list, DictConfig)):
+    if ff_modules is not None:
         ff_modules = OmegaConf.to_container(ff_modules, resolve=True)
 
     return IA3Config(

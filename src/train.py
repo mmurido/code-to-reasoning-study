@@ -67,7 +67,7 @@ def run_training(cfg, exp_dir: Path):
             adapter_dir = exp_dir / "train/checkpoints/final"
             adapter_dir.mkdir(parents=True, exist_ok=True)
 
-            if peft_cfg["method"] == "bitfit":
+            if cfg.peft.method == "bitfit":
                 save_bitfit_only(trainer.model, adapter_dir)
             else:
                 trainer.save_model(str(adapter_dir))
