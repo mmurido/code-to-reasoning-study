@@ -3,19 +3,6 @@ from pathlib import Path
 from transformers import AutoModelForCausalLM
 
 
-def prepare_model_for_bitfit(model, bias="all"):
-    # Freeze everything
-    model.requires_grad_(False)
-
-    # Unfreeze biases
-    if bias == "all":
-        for name, param in model.named_parameters():
-            if "bias" in name:
-                param.requires_grad_(True)
-
-    return model
-
-
 def save_bitfit_only(model, save_directory):
     save_directory = Path(save_directory)
     save_directory.mkdir(parents=True, exist_ok=True)

@@ -39,11 +39,19 @@ def build_prefix_tuning(cfg: DictConfig) -> PrefixTuningConfig:
     )
 
 
-def build_bitfit(cfg: DictConfig) -> dict:
+def build_bitfit(cfg: DictConfig, model: Any) -> dict:
     peft_cfg = cfg.peft
+    bias_type = peft_cfg.get("bias", "all")
+
+    model.requires_grad_(False)
+    if bias_type == "all":
+        for name, param in model.named_parameters():
+            if "bias" in name:
+                param.requires_grad_(True)
+
     return {
         "method": "bitfit",
-        "bias": peft_cfg.get("bias", "all"),
+        "bias": bias_type,
         "task_type": "CAUSAL_LM",
     }
 
@@ -75,9 +83,14 @@ PEFT_BUILDERS = {
 }
 
 
-def build_peft(cfg: DictConfig) -> Any:
+def build_peft(cfg: DictConfig, model: Any = None) -> Any:
     method = cfg.peft.method
     if method not in PEFT_BUILDERS:
         raise ValueError(f"Unknown PEFT method: {method}")
+
     builder = PEFT_BUILDERS[method]
+
+    if method in ["bitfit"]:
+        return builder(cfg, model)
+
     return builder(cfg)

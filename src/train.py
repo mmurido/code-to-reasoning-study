@@ -9,7 +9,7 @@ from src.setup.data import load_data
 from src.setup.model import load_model_and_tokenizer
 from src.setup.peft import build_peft
 from src.setup.trainer import build_trainer
-from utils.peft import prepare_model_for_bitfit, save_bitfit_only
+from utils.peft import save_bitfit_only
 from utils.logging import (
     log_timestamp,
     log_hydra_info,
@@ -43,12 +43,9 @@ def run_training(cfg, exp_dir: Path):
         try:
             model, tokenizer = load_model_and_tokenizer(cfg)
             dataset = load_data(cfg)
-            peft_cfg = build_peft(cfg)
+            peft_cfg = build_peft(cfg, model)
 
-            if cfg.peft.method == "bitfit":
-                model = prepare_model_for_bitfit(
-                    model, bias=peft_cfg.get("bias", "all")
-                )
+            if cfg.peft.method in ["bitfit"]:
                 trainer = build_trainer(cfg, model, dataset, None, exp_dir)
             else:
                 trainer = build_trainer(cfg, model, dataset, peft_cfg, exp_dir)
@@ -68,7 +65,7 @@ def run_training(cfg, exp_dir: Path):
             adapter_dir.mkdir(parents=True, exist_ok=True)
 
             if cfg.peft.method == "bitfit":
-                save_bitfit_only(trainer.model, adapter_dir)
+                save_bitfit_only(trainer.model, str(adapter_dir))
             else:
                 trainer.save_model(str(adapter_dir))
 
