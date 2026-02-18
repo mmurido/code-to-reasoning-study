@@ -15,4 +15,3 @@ tasks:
   - boolq
   - piqa
   - arc_easy
-  - hellaswag

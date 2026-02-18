@@ -1,6 +1,6 @@
 hf_id: bigcode/starcoderdata
 name: starcoderdata
-languages: cpp
+subsets: cpp
 split: train
 text_field: content
 total_tokens_target: 50000000

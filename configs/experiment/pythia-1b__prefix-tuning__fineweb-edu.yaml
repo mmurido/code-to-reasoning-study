@@ -1,0 +1,13 @@
+# @package _global_
+
+defaults:
+  - /model: pythia-1b
+  - /peft: prefix-tuning-pythia
+  - /dataset: fineweb-edu
+  - /training: base
+  - /eval: base
+  - _self_
+
+run:
+  id: pythia-1b__prefix-tuning__fineweb-edu
+  timestamp: null
