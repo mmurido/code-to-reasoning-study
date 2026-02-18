@@ -3,7 +3,7 @@ import json
 import time
 import contextlib
 from datetime import datetime
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, open_dict
 from pathlib import Path
 from src.setup.data import load_data
 from src.setup.model import load_model_and_tokenizer
@@ -36,20 +36,24 @@ def run_training(cfg, exp_dir: Path):
         contextlib.redirect_stdout(log_f),
         contextlib.redirect_stderr(log_f),
     ):
-        log_timestamp(log_f)
-        log_hydra_info(log_f, cfg)
-        log_hardware_info(log_f)
-
         try:
             model, tokenizer = load_model_and_tokenizer(cfg)
             dataset = load_data(cfg)
             peft_cfg = build_peft(cfg, model)
+
+            with open_dict(cfg):
+                if cfg.peft.method == "bitfit":
+                    cfg.training.save_steps = cfg.training.max_steps + 1
+                    cfg.training.save_total_limit = 0
 
             if cfg.peft.method in ["bitfit"]:
                 trainer = build_trainer(cfg, model, dataset, None, exp_dir)
             else:
                 trainer = build_trainer(cfg, model, dataset, peft_cfg, exp_dir)
 
+            log_timestamp(log_f)
+            log_hydra_info(log_f, cfg)
+            log_hardware_info(log_f)
             log_model_info(log_f, trainer.model)
             log_peft_info(log_f, peft_cfg)
             log_trainer_info(log_f, trainer)

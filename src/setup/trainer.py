@@ -14,7 +14,7 @@ def build_trainer(
         output_dir=str(exp_dir / "train/checkpoints"),
         seed=t.seed,
         report_to="wandb",
-        run_name=cfg.run.id,
+        run_name=cfg.run_id,
         per_device_train_batch_size=t.per_device_train_batch_size,
         gradient_accumulation_steps=t.gradient_accumulation_steps,
         max_steps=t.max_steps,

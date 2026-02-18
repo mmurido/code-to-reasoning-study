@@ -1,0 +1,19 @@
+hydra:
+  output_subdir: null
+  run:
+    dir: .
+
+defaults:
+  - model: ???
+  - peft: ???
+  - dataset: ???
+  - training: base
+  - eval: base
+  - override /hydra/job_logging: disabled
+  - override /hydra/hydra_logging: disabled
+  - _self_
+
+do_train: true
+do_eval: true
+existing_exp: null
+output_dir: "experiments"
