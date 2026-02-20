@@ -1,0 +1,7 @@
+method: vera
+r: 256
+d_initial: 0.05
+vera_dropout: 0.0
+target_modules:
+  - query_key_value
+  - dense

@@ -8,3 +8,5 @@ nohup.log
 count_params.py
 count_tokens.py
 check_dataset.py
+read_results.py
+aggregated_results.json

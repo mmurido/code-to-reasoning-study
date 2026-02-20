@@ -1,6 +1,6 @@
 from typing import Any
 from omegaconf import DictConfig, OmegaConf
-from peft import LoraConfig, PrefixTuningConfig, IA3Config
+from peft import LoraConfig, PrefixTuningConfig, IA3Config, VeraConfig
 
 
 def build_lora(cfg: DictConfig) -> LoraConfig:
@@ -39,23 +39,6 @@ def build_prefix_tuning(cfg: DictConfig) -> PrefixTuningConfig:
     )
 
 
-def build_bitfit(cfg: DictConfig, model: Any) -> dict:
-    peft_cfg = cfg.peft
-    bias_type = peft_cfg.get("bias", "all")
-
-    model.requires_grad_(False)
-    if bias_type == "all":
-        for name, param in model.named_parameters():
-            if "bias" in name:
-                param.requires_grad_(True)
-
-    return {
-        "method": "bitfit",
-        "bias": bias_type,
-        "task_type": "CAUSAL_LM",
-    }
-
-
 def build_ia3(cfg: DictConfig) -> IA3Config:
     peft_cfg = cfg.peft
 
@@ -75,22 +58,39 @@ def build_ia3(cfg: DictConfig) -> IA3Config:
     )
 
 
+def build_vera(cfg: DictConfig) -> VeraConfig:
+    peft_cfg = cfg.peft
+
+    target_modules = peft_cfg.get("target_modules", None)
+    if target_modules is not None:
+        target_modules = OmegaConf.to_container(target_modules, resolve=True)
+
+    layers_to_transform = peft_cfg.get("layers_to_transform", None)
+    if layers_to_transform is not None:
+        layers_to_transform = OmegaConf.to_container(layers_to_transform, resolve=True)
+
+    return VeraConfig(
+        task_type="CAUSAL_LM",
+        r=peft_cfg.get("r", 256),
+        vera_dropout=peft_cfg.get("vera_dropout", 0.0),
+        d_initial=peft_cfg.get("d_initial", 0.1),
+        target_modules=target_modules,
+        layers_to_transform=layers_to_transform,
+    )
+
+
 PEFT_BUILDERS = {
     "lora": build_lora,
     "prefix_tuning": build_prefix_tuning,
-    "bitfit": build_bitfit,
     "ia3": build_ia3,
+    "vera": build_vera,
 }
 
 
-def build_peft(cfg: DictConfig, model: Any = None) -> Any:
+def build_peft(cfg: DictConfig) -> Any:
     method = cfg.peft.method
     if method not in PEFT_BUILDERS:
         raise ValueError(f"Unknown PEFT method: {method}")
 
     builder = PEFT_BUILDERS[method]
-
-    if method in ["bitfit"]:
-        return builder(cfg, model)
-
     return builder(cfg)

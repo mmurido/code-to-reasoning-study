@@ -7,7 +7,6 @@ import contextlib
 from utils.baseline import baseline_dir
 from utils.logging import log_eval_config
 from utils.json import json_safe
-from utils.peft import load_bitfit_only
 from lm_eval.models.huggingface import HFLM
 from lm_eval import evaluator
 from pathlib import Path
@@ -39,6 +38,7 @@ def run_lm_eval(
     }
 
     from transformers import AutoModelForCausalLM, AutoTokenizer
+    from peft import PeftModel
 
     base_model = AutoModelForCausalLM.from_pretrained(
         model_name,
@@ -48,15 +48,17 @@ def run_lm_eval(
     )
 
     if peft_path is not None:
-        if peft_method == "bitfit":
-            base_model = load_bitfit_only(base_model, peft_path)
-            lm = HFLM(
-                pretrained=base_model,
-                tokenizer=AutoTokenizer.from_pretrained(model_name),
-            )
-        else:
-            model_args["peft"] = str(peft_path)
-            lm = HFLM(**model_args)
+        model = PeftModel.from_pretrained(
+            base_model,
+            peft_path,
+            device_map="auto",
+            torch_dtype=torch.float16,
+        )
+        model.eval()
+        lm = HFLM(
+            pretrained=model,
+            tokenizer=AutoTokenizer.from_pretrained(model_name),
+        )
     else:
         lm = HFLM(**model_args)
 

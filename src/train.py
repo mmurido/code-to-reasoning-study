@@ -3,13 +3,12 @@ import json
 import time
 import contextlib
 from datetime import datetime
-from omegaconf import OmegaConf, open_dict
+from omegaconf import OmegaConf
 from pathlib import Path
 from src.setup.data import load_data
 from src.setup.model import load_model_and_tokenizer
 from src.setup.peft import build_peft
 from src.setup.trainer import build_trainer
-from utils.peft import save_bitfit_only
 from utils.logging import (
     log_timestamp,
     log_hydra_info,
@@ -39,17 +38,9 @@ def run_training(cfg, exp_dir: Path):
         try:
             model, tokenizer = load_model_and_tokenizer(cfg)
             dataset = load_data(cfg)
-            peft_cfg = build_peft(cfg, model)
+            peft_cfg = build_peft(cfg)
 
-            with open_dict(cfg):
-                if cfg.peft.method == "bitfit":
-                    cfg.training.save_steps = cfg.training.max_steps + 1
-                    cfg.training.save_total_limit = 0
-
-            if cfg.peft.method in ["bitfit"]:
-                trainer = build_trainer(cfg, model, dataset, None, exp_dir)
-            else:
-                trainer = build_trainer(cfg, model, dataset, peft_cfg, exp_dir)
+            trainer = build_trainer(cfg, model, dataset, peft_cfg, exp_dir)
 
             log_timestamp(log_f)
             log_hydra_info(log_f, cfg)
@@ -67,12 +58,7 @@ def run_training(cfg, exp_dir: Path):
 
             adapter_dir = exp_dir / "train/checkpoints/final"
             adapter_dir.mkdir(parents=True, exist_ok=True)
-
-            if cfg.peft.method == "bitfit":
-                save_bitfit_only(trainer.model, str(adapter_dir))
-            else:
-                trainer.save_model(str(adapter_dir))
-
+            trainer.save_model(str(adapter_dir))
             tokenizer.save_pretrained(str(adapter_dir))
 
             print(f"Final model/adapter saved to: {adapter_dir}", flush=True)

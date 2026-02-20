@@ -1,8 +1,6 @@
 --extra-index-url https://download.pytorch.org/whl/cu118
 
 torch==2.1.2+cu118
-torchvision==0.16.2+cu118
-torchaudio==2.1.2+cu118
 
 transformers==4.48.0
 peft==0.14.0
@@ -10,13 +8,14 @@ trl==0.13.0
 accelerate==1.1.0
 lm_eval==0.4.9
 datasets==2.21.0
-numpy==1.26.4
 wandb
 huggingface_hub==0.25.0
-pyyaml
+hydra-core
+
 python-dotenv
+tiktoken==0.7.0
 evaluate
 tqdm
-hydra-core
 psutil
-tiktoken==0.7.0
+pyyaml
+numpy==1.26.4
