@@ -60,7 +60,7 @@ def _build_subset_dataset(
                 break
 
             current_tokens += token_count
-            yield example
+            yield {"text": text}
 
             if current_tokens % 500_000 == 0:
                 elapsed = time.time() - start_time
@@ -98,12 +98,7 @@ def load_data(cfg: DictConfig):
     subset_datasets = []
 
     for subset_name in subsets:
-        data_dir = subset_name
-
-        print(
-            f"[{subset_name}] Loading from data_dir='{data_dir}' | "
-            f"target ~{target_per_subset:,} tokens"
-        )
+        print(f"[{subset_name}] Loading subset | target ~{target_per_subset:,} tokens")
 
         load_kwargs = _build_load_kwargs(ds_cfg, subset_name)
         ds_raw = load_dataset(**load_kwargs)
@@ -125,5 +120,4 @@ def load_data(cfg: DictConfig):
             stopping_strategy="all_exhausted",
         )
 
-    ds = ds.map(lambda x: {"text": x[text_field]}, batched=False)
     return ds
