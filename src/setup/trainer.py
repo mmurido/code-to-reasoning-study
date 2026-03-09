@@ -1,4 +1,4 @@
-from trl import SFTTrainer, SFTConfig
+from trl import SFTConfig, SFTTrainer
 
 
 def build_trainer(
@@ -8,31 +8,33 @@ def build_trainer(
     peft_cfg,
     exp_dir,
 ):
-    t = cfg.training
+    """Build the trainer used for fine-tuning."""
+
+    training_cfg = cfg.training
 
     sft_config = SFTConfig(
         output_dir=str(exp_dir / "train/checkpoints"),
-        seed=t.seed,
+        seed=training_cfg.seed,
         report_to="wandb",
         run_name=cfg.run_id,
-        per_device_train_batch_size=t.per_device_train_batch_size,
-        gradient_accumulation_steps=t.gradient_accumulation_steps,
-        max_steps=t.max_steps,
-        learning_rate=t.learning_rate,
-        warmup_steps=t.warmup_steps,
-        lr_scheduler_type=t.lr_scheduler_type,
-        weight_decay=t.weight_decay,
-        fp16=t.fp16,
-        max_grad_norm=t.max_grad_norm,
-        gradient_checkpointing=t.gradient_checkpointing,
-        dataloader_num_workers=t.dataloader_num_workers,
-        logging_steps=t.logging_steps,
-        logging_strategy=t.logging_strategy,
-        log_level=t.log_level,
-        disable_tqdm=t.disable_tqdm,
-        save_steps=t.save_steps,
-        save_total_limit=t.save_total_limit,
-        max_seq_length=t.max_seq_length,
+        per_device_train_batch_size=training_cfg.per_device_train_batch_size,
+        gradient_accumulation_steps=training_cfg.gradient_accumulation_steps,
+        max_steps=training_cfg.max_steps,
+        learning_rate=training_cfg.learning_rate,
+        warmup_steps=training_cfg.warmup_steps,
+        lr_scheduler_type=training_cfg.lr_scheduler_type,
+        weight_decay=training_cfg.weight_decay,
+        fp16=training_cfg.fp16,
+        max_grad_norm=training_cfg.max_grad_norm,
+        gradient_checkpointing=training_cfg.gradient_checkpointing,
+        dataloader_num_workers=training_cfg.dataloader_num_workers,
+        logging_steps=training_cfg.logging_steps,
+        logging_strategy=training_cfg.logging_strategy,
+        log_level=training_cfg.log_level,
+        disable_tqdm=training_cfg.disable_tqdm,
+        save_steps=training_cfg.save_steps,
+        save_total_limit=training_cfg.save_total_limit,
+        max_seq_length=training_cfg.max_seq_length,
         packing=True,
     )
 
@@ -44,5 +46,4 @@ def build_trainer(
     )
 
     trainer.can_return_loss = True
-
     return trainer

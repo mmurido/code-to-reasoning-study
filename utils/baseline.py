@@ -3,12 +3,15 @@ from pathlib import Path
 from omegaconf import DictConfig
 
 
-def baseline_dir(cfg: DictConfig) -> Path:
+def get_baseline_dir(cfg: DictConfig) -> Path:
+    """Return the folder used to store baseline results."""
     return Path("baselines") / cfg.model.name
 
 
 def link_existing_baseline(cfg: DictConfig, exp_dir: Path) -> None:
-    src = baseline_dir(cfg)
+    """Create a link to an existing baseline inside the experiment folder."""
+
+    src = get_baseline_dir(cfg)
     dst = exp_dir / "eval" / "baseline"
 
     dst.parent.mkdir(parents=True, exist_ok=True)

@@ -3,7 +3,9 @@ from omegaconf import DictConfig, ListConfig, open_dict
 from datetime import datetime
 
 
-def create_run_id(cfg: DictConfig) -> str:
+def set_run_id(cfg: DictConfig) -> None:
+    """Build a run id from the experiment settings and store it in the config."""
+
     model = cfg.model.name
     peft = cfg.peft.method
     dataset = cfg.dataset.name
@@ -29,6 +31,8 @@ def create_run_id(cfg: DictConfig) -> str:
 
 
 def create_experiment_dir(cfg: DictConfig) -> Path:
+    """Create experiment folder and its subfolders."""
+
     exp_dir = Path(cfg.output_dir) / cfg.run_id
     exp_dir.mkdir(parents=True, exist_ok=True)
 
