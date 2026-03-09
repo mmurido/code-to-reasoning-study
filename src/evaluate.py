@@ -110,7 +110,7 @@ def _evaluate_task(
         contextlib.redirect_stderr(log_handle),
     ):
         config_summary = log_eval_config(
-            log_f=log_handle,
+            log_handle=log_handle,
             task=task_name,
             lm=eval_model,
             num_fewshot=num_fewshot,
