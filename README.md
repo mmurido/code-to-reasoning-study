@@ -1,12 +1,12 @@
-# Code to Reasoning Study
+# Code-Induced Transfer in LLM Reasoning
 
 This repository contains the experimental pipeline developed for my bachelor's thesis at Università degli Studi di Napoli Federico II, titled *Impact of Unsupervised Code Fine-Tuning on LLMs' Reasoning*.
 
-The project investigates whether unsupervised fine-tuning on source code can improve reasoning performance on tasks outside programming. In the thesis, this effect is referred to as the **Code-Induced Transfer Effect (CITE)**. The experiments compare code fine-tuning against a matched natural-language baseline across different Pythia model sizes, PEFT methods, and reasoning benchmarks.
+The thesis investigates whether unsupervised fine-tuning on source code can improve reasoning performance beyond programming tasks. This phenomenon is referred to as the **Code-Induced Transfer Effect (CITE)**. The experiments compare code fine-tuning against a matched natural-language baseline across different Pythia model sizes, PEFT methods, and reasoning benchmarks.
 
 ## What this repository contains
 
-This repository includes the full experimental pipeline:
+This repository includes the full pipeline used to run the experiments:
 
 - configs used for the experiments
 - setup of model, tokenizer, dataset, and PEFT
@@ -18,7 +18,7 @@ The full thesis is included in the repository for methodological details and res
 
 ## Running an experiment
 
-Experiments are launched with Hydra overrides from the command line.
+Experiments are launched from the command line using Hydra overrides.
 
 Run a full experiment:
 
@@ -29,7 +29,7 @@ python3 run_experiment.py \
   dataset=starcoderdata-python
 ```
 
-Run evaluation only, for example to resume it:
+Run evaluation only, for example to resume an existing experiment:
 
 ```
 python3 run_experiment.py \
